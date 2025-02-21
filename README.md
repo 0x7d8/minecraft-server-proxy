@@ -10,6 +10,11 @@ cd minecraft-server-proxy
 
 # Build the project
 cargo build --release
+
+# or use the pre-built binary
+# download the latest release from the releases page
+# extract the downloaded archive
+# add the binary to your PATH
 ```
 
 ## Running
