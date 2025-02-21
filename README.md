@@ -2,7 +2,7 @@
 
 A simple Minecraft server proxy that allows you to connect to multiple servers using a single IP address.
 
-## Building:
+## Building
 
 ```bash
 git clone https://github.com/0x7d8/minecraft-server-proxy.git
@@ -12,7 +12,7 @@ cd minecraft-server-proxy
 cargo build --release
 ```
 
-## Running:
+## Running
 
 ```bash
 # Copy the example configuration file

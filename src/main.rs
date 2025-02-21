@@ -1,15 +1,18 @@
 mod packet;
 
+use serde::Deserialize;
 use serde_json::json;
 use std::{
     collections::HashMap,
+    fs::File,
     io::{Read, Write},
     net::{TcpListener, TcpStream},
+    sync::Arc,
 };
 use std::{io, thread};
-use serde::Deserialize;
 
 const PORT: u16 = 25565;
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 struct ClientData {
     protocol: u32,
@@ -42,11 +45,14 @@ fn handle_packet(
     stream: &mut TcpStream,
     packet: &mut packet::Packet,
     client_data: &mut Option<ClientData>,
-    reroutes: &HashMap<String, (String, u16)>,
+    config: &Reroutes,
 ) {
     if client_data.is_some() && client_data.as_ref().unwrap().stop_handling {
         return;
     }
+
+    let name = "Reroute Proxy".to_string();
+    let name = config.name.as_ref().unwrap_or(&name);
 
     match packet.id {
         0x00 => {
@@ -67,7 +73,7 @@ fn handle_packet(
                     backend_stream: None,
                 });
 
-                let reroute = reroutes.get(host.as_str());
+                let reroute = config.reroutes.get(host.as_str());
                 if reroute.is_some() {
                     let (backend_host, backend_port) = reroute.unwrap();
 
@@ -188,7 +194,7 @@ fn handle_packet(
                 let response = json!({
                     "version": {
                         "protocol": client_data.as_ref().unwrap().protocol,
-                        "name": "Reroute Proxy",
+                        "name": &name,
                         "supportedVersions": [client_data.as_ref().unwrap().protocol],
                     },
                     "players": {
@@ -198,8 +204,8 @@ fn handle_packet(
                     },
                     "description": {
                         "text": client_data.as_ref().unwrap().backend_offline
-                            .then(|| "Reroute Proxy - Backend is offline")
-                            .unwrap_or("Reroute Proxy - No Server found"),
+                            .then(|| format!("{} - Backend is offline", &name))
+                            .unwrap_or(format!("{} - No Server found", &name)),
                     }
                 });
 
@@ -210,8 +216,6 @@ fn handle_packet(
                 let response_packet = builder.build();
                 stream.write_all(&response_packet.body).unwrap();
             }
-
-            return;
         }
         0x01 => {
             println!("Ping packet");
@@ -224,8 +228,6 @@ fn handle_packet(
 
             let response_packet = builder.build();
             stream.write_all(&response_packet.body).unwrap();
-
-            return;
         }
         _ => {
             println!("Unknown packet: {}", packet.id);
@@ -233,50 +235,53 @@ fn handle_packet(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct Reroutes {
+    name: Option<String>,
     reroutes: HashMap<String, (String, u16)>,
 }
 
 fn main() {
-    let file = std::fs::File::open("reroutes.json").unwrap();
-    let data: Reroutes = serde_json::from_reader(file).unwrap();
+    let file = File::open("reroutes.json").unwrap();
+    let data: Arc<Reroutes> = Arc::new(serde_json::from_reader(file).unwrap());
 
     let listener = TcpListener::bind(("0.0.0.0", PORT)).unwrap();
-    println!("Server started on port {}", PORT);
-    println!("{} Reroutes active", data.reroutes.len());
+    println!("Server started on 0.0.0.0:{} (v{})", PORT, VERSION);
+    println!("{} reroutes active", data.reroutes.len());
 
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let mut client_data: Option<ClientData> = None;
+                let config = Arc::clone(&data);
 
-                println!("New connection: {}", stream.peer_addr().unwrap());
+                thread::spawn(move || {
+                    let mut client_data: Option<ClientData> = None;
 
-                loop {
-                    let mut buffer = [0; 1024];
-                    let bytes_read = stream.read(&mut buffer).unwrap();
+                    println!("New connection: {}", stream.peer_addr().unwrap());
 
-                    if bytes_read == 0 {
-                        break;
+                    loop {
+                        let mut buffer = [0; 1024];
+                        let bytes_read = stream.read(&mut buffer).unwrap();
+
+                        if bytes_read == 0 {
+                            break;
+                        }
+
+                        let mut packet = packet::Packet::new(buffer[..bytes_read].to_vec());
+                        handle_packet(&mut stream, &mut packet, &mut client_data, &config);
+
+                        let offset = packet.offset as usize;
+
+                        // slice the buffer to remove the processed packet
+                        buffer.copy_within(offset..bytes_read, 0);
                     }
-
-                    let mut packet = packet::Packet::new(buffer[..bytes_read].to_vec());
-                    handle_packet(&mut stream, &mut packet, &mut client_data, &data.reroutes);
-
-                    let offset = packet.offset as usize;
-
-                    // slice the buffer to remove the processed packet
-                    buffer.copy_within(offset..bytes_read, 0);
-                }
+                });
             }
             Err(e) => {
                 eprintln!("Error: {}", e);
             }
         }
     }
-
-    drop(listener);
 
     println!("Server stopped");
 }

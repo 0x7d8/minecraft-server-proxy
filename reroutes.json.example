@@ -1,4 +1,5 @@
 {
+	"name": "My Reroute Proxy",
 	"reroutes": {
 		"im.a.domain": ["192.168.178.2", 25565],
 		"im.another.domain": ["192.168.178.2", 26666]

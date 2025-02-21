@@ -27,7 +27,7 @@ impl Packet {
         packet.size = packet.read_var_int();
         packet.id = packet.read_var_int();
 
-        return packet;
+        packet
     }
 
     pub fn read_var_int(&mut self) -> u32 {
@@ -49,7 +49,7 @@ impl Packet {
 
         self.offset += num_read;
 
-        return result;
+        result
     }
 
     pub fn read_long(&mut self) -> u64 {
@@ -60,7 +60,7 @@ impl Packet {
 
         self.offset += 8;
 
-        return result;
+        result
     }
 
     pub fn read_uint16(&mut self) -> u16 {
@@ -68,18 +68,18 @@ impl Packet {
             | (self.body[(self.offset + 1) as usize] as u16);
         self.offset += 2;
 
-        return result;
+        result
     }
 
     pub fn read_string(&mut self) -> String {
         let length = self.read_var_int();
-        let result = String::from_utf8(
-            self.body[self.offset as usize..(self.offset + length) as usize].to_vec(),
-        )
-        .unwrap();
+        let result = String::from_utf8_lossy(
+            &self.body[self.offset as usize..(self.offset + length) as usize],
+        );
+
         self.offset += length;
 
-        return result;
+        result.to_string()
     }
 }
 
@@ -131,6 +131,6 @@ impl PacketBuilder {
         packet.write_var_int(self.body.len() as u32);
         packet.body.extend(&self.body);
 
-        return Packet::new(packet.body);
+        Packet::new(packet.body)
     }
 }
