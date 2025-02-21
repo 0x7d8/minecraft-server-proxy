@@ -8,9 +8,9 @@ on:
       - main
 
 env:
-  BIN_NAME: draw-together
-  PROJECT_NAME: draw-together
-  REPO_NAME: 0x7d8/draw-together
+  BIN_NAME: minecraft-server-proxy
+  PROJECT_NAME: minecraft-server-proxy
+  REPO_NAME: 0x7d8/minecraft-server-proxy
 
 jobs:
   dist:
