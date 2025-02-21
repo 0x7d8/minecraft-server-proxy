@@ -5,9 +5,9 @@ on:
       - main
 
 env:
-  BIN_NAME: mcvcli
-  PROJECT_NAME: mcvcli
-  REPO_NAME: mcjars/mcvcli
+  BIN_NAME: minecraft-server-proxy
+  PROJECT_NAME: minecraft-server-proxy
+  REPO_NAME: 0x7d8/minecraft-server-proxy
 
 jobs:
   dist:
