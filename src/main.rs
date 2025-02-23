@@ -87,7 +87,6 @@ fn handle_packet(
                             if state != 1 {
                                 client_data.as_mut().unwrap().stop_handling = true;
 
-                                // proxy data to backend server
                                 let mut backend_stream_clone = client_data
                                     .as_ref()
                                     .unwrap()
@@ -123,7 +122,7 @@ fn handle_packet(
                                     backend_stream_clone.try_clone().unwrap(),
                                     backend_stream_clone,
                                 )
-                                .unwrap_or((0, 0));
+                                .unwrap_or_default();
 
                                 return;
                             }
@@ -272,7 +271,6 @@ fn main() {
 
                         let offset = packet.offset as usize;
 
-                        // slice the buffer to remove the processed packet
                         buffer.copy_within(offset..bytes_read, 0);
                     }
                 });
