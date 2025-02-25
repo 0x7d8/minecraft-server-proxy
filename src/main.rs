@@ -234,7 +234,7 @@ fn handle_packet(
     }
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Reroutes {
     name: Option<String>,
     reroutes: HashMap<String, (String, u16)>,
