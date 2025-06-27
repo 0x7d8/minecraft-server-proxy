@@ -77,7 +77,7 @@ fn handle_packet(
                 if reroute.is_some() {
                     let (backend_host, backend_port) = reroute.unwrap();
 
-                    println!("Rerouting to {}:{}", backend_host, backend_port);
+                    println!("Rerouting to {backend_host}:{backend_port}");
 
                     match TcpStream::connect((backend_host.as_str(), *backend_port)) {
                         Ok(backend_stream) => {
@@ -134,10 +134,10 @@ fn handle_packet(
                     }
                 }
 
-                println!("Protocol: {}", protocol);
-                println!("Host: {}", host);
-                println!("Port: {}", port);
-                println!("State: {}", state);
+                println!("Protocol: {protocol}");
+                println!("Host: {host}");
+                println!("Port: {port}");
+                println!("State: {state}");
             } else {
                 println!("MOTD Packet");
 
@@ -245,7 +245,7 @@ fn main() {
     let data: Arc<Reroutes> = Arc::new(serde_json::from_reader(file).unwrap());
 
     let listener = TcpListener::bind(("0.0.0.0", PORT)).unwrap();
-    println!("Server started on 0.0.0.0:{} (v{})", PORT, VERSION);
+    println!("Server started on 0.0.0.0:{PORT} (v{VERSION})");
     println!("{} reroutes active", data.reroutes.len());
 
     for stream in listener.incoming() {
@@ -276,7 +276,7 @@ fn main() {
                 });
             }
             Err(e) => {
-                eprintln!("Error: {}", e);
+                eprintln!("Error: {e}");
             }
         }
     }
